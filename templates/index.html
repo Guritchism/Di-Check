@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganografi PDN</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f8f8;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-direction: column;
+        }
+        .logo {
+            max-width: 180px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-weight: 300;
+            font-size: 2.2rem;
+            margin-top: 0;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e1e1e1;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            outline: none;
+            position: relative;
+            color: #888;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background-color: transparent;
+            color: #333;
+            font-weight: 600;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #333;
+        }        .tab-content {
+            display: none;
+            padding: 25px 0;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            background-color: #fafafa;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        textarea:focus {
+            border-color: #666;
+            outline: none;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #666;
+            outline: none;
+        }
+        button {
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #333;
+        }        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #444;
+            border-radius: 3px;
+        }
+        .binary {
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+            margin: 10px 0;
+            padding: 12px;
+            background-color: #f3f3f3;
+            border-radius: 3px;
+            border: 1px solid #e6e6e6;
+            color: #555;
+            font-size: 13px;
+        }
+        .info {
+            background-color: #f8f8f8;
+            border-left: 4px solid #666;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .input-methods {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .input-method {
+            flex: 1;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }        .secondary-button {
+            background-color: #666;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .secondary-button:hover {
+            background-color: #555;
+        }input[type="file"] {
+            display: block;
+            margin: 10px 0;
+        }
+        .debug-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .debug-table th, .debug-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .debug-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .debug-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .debug-table tr:hover {
+            background-color: #f1f1f1;
+        }        .debug-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }        .info-message {
+            margin-top: 5px;
+            padding: 5px 10px;
+            background-color: #f5f5f5;
+            border-left: 3px solid #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/static/logo.png" alt="Di-check Logo" class="logo">
+            <h1>Alat Steganografi PDN</h1>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, 'encode-tab')">Enkode Pesan</button>
+            <button class="tab" onclick="openTab(event, 'decode-tab')">Dekode Pesan</button>
+        </div>
+        
+        <!-- Encode Tab -->
+        <div id="encode-tab" class="tab-content active">            <h2>Enkode pesan dalam notasi PDN</h2>
+              <div class="input-methods">
+                <div class="input-method">                    <h3>Pilihan 1: Tempel PDN</h3>
+                    <label for="pdn-input">Notasi PDN:</label>
+                    <textarea id="pdn-input" placeholder="Tempelkan notasi permainan PDN Anda di sini..." onchange="checkMaxLength()"></textarea>
+                    <div id="max-length-info" class="info-message" style="display: none;">
+                        Panjang pesan maksimum: <span id="max-char-count">0</span> karakter
+                    </div>
+                </div>
+                
+                <div class="input-method">
+                    <h3>Pilihan 2: Unggah File PDN</h3>
+                    <label for="pdn-file">Unggah File PDN:</label>
+                    <input type="file" id="pdn-file" accept=".pdn,.PDN">
+                    <button onclick="uploadPDN()" class="secondary-button">Unggah File PDN</button>
+                </div>
+            </div>              <label for="message-input">Pesan untuk Disembunyikan:</label>
+            <input type="text" id="message-input" placeholder="Masukkan pesan rahasia Anda..." oninput="updateCharCount()">
+            <div id="char-count" class="info-message" style="display: none;">
+                <span id="current-chars">0</span>/<span id="max-chars">0</span> karakter digunakan
+            </div>
+            
+            <button onclick="encodePDN()">Enkode Pesan</button>
+            
+            <div id="encode-result" class="result" style="display: none;">
+                <h3>PDN Terenkode:</h3>
+                <textarea id="encoded-pdn" readonly></textarea>
+                
+                <h3>Pesan Biner:</h3>
+                <div id="binary-message" class="binary"></div>
+                
+                <button onclick="copyToClipboard('encoded-pdn')">Salin PDN Terenkode</button>
+                <button onclick="downloadPDN()" style="margin-left: 10px;">Download PDN Terenkode</button>
+            </div>
+        </div>
+          <!-- Decode Tab -->
+        <div id="decode-tab" class="tab-content">            <h2>Dekode pesan dari notasi PDN</h2>
+            
+            <div class="input-methods">
+                <div class="input-method">
+                    <h3>Pilihan 1: Tempel PDN</h3>
+                    <label for="encoded-pdn-input">Notasi PDN Terenkode:</label>
+                    <textarea id="encoded-pdn-input" placeholder="Tempelkan notasi permainan PDN terenkode di sini..."></textarea>
+                </div>
+                
+                <div class="input-method">
+                    <h3>Pilihan 2: Unggah File PDN</h3>
+                    <label for="encoded-pdn-file">Unggah File PDN Terenkode:</label>
+                    <input type="file" id="encoded-pdn-file" accept=".pdn,.PDN">
+                    <button onclick="uploadEncodedPDN()" class="secondary-button">Unggah File PDN</button>
+                </div>
+            </div>
+              <button onclick="decodePDN()">Dekode Pesan</button>
+              <div id="decode-result" class="result" style="display: none;">
+                <h3>Pesan Biner Diekstrak:</h3>
+                <div id="extracted-binary" class="binary"></div>
+                
+                <h3>Pesan Terdekode:</h3>
+                <div id="decoded-message"></div>
+                
+                <div class="debug-section">
+                    <h3>Informasi Debug:</h3>
+                    <button onclick="toggleDebugInfo()" class="secondary-button">Tampilkan/Sembunyikan Info Debug</button>
+                    <div id="debug-info" style="display: none; margin-top: 10px;">
+                        <table id="move-debug-table" class="debug-table">
+                            <thead>
+                                <tr>                                    <th>Baris</th>
+                                    <th>Gerakan</th>
+                                    <th>Nol Depan Pertama</th>
+                                    <th>Nol Depan Kedua</th>
+                                    <th>Bit</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variabel global untuk menyimpan nama file PDN yang diunggah
+        let originalPdnFilename = "";
+        
+        // Tab functionality
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove("active");
+            }
+            
+            const tabs = document.getElementsByClassName("tab");
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+            
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+          // Encode PDN with hidden message
+        async function encodePDN() {
+            const pdnText = document.getElementById("pdn-input").value;
+            const message = document.getElementById("message-input").value;
+              if (!pdnText) {
+                alert("Silakan masukkan notasi PDN.");
+                return;
+            }
+            
+            if (!message) {
+                alert("Silakan masukkan pesan untuk disembunyikan.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('/encode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pdn: pdnText, message: message }),
+                });
+                
+                const data = await response.json();
+                  if (response.status !== 200) {                    // Display error message
+                    alert(data.error || "Terjadi kesalahan selama proses enkode.");
+                    document.getElementById("binary-message").textContent = data.binary_message || "";
+                    
+                    // Still show max message length if available
+                    if (data.max_message_length !== undefined) {
+                        document.getElementById("max-char-count").textContent = data.max_message_length;
+                        document.getElementById("max-length-info").style.display = "block";
+                    }
+                    
+                    return;
+                }
+                
+                document.getElementById("encoded-pdn").value = data.encoded_pdn;
+                document.getElementById("binary-message").textContent = data.binary_message;
+                document.getElementById("encode-result").style.display = "block";
+                  // Update max message length if available
+                if (data.max_message_length !== undefined) {
+                    const maxLength = data.max_message_length;
+                    document.getElementById("max-char-count").textContent = maxLength;
+                    document.getElementById("max-length-info").style.display = "block";
+                    
+                    // Update character counter
+                    document.getElementById("max-chars").textContent = maxLength;
+                    updateCharCount();
+                    document.getElementById("char-count").style.display = "block";
+                }            } catch (error) {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan saat mengenkode pesan.");
+            }
+        }
+          // Decode message from PDN
+        async function decodePDN() {
+            const encodedPDN = document.getElementById("encoded-pdn-input").value;
+              if (!encodedPDN) {
+                alert("Silakan masukkan notasi PDN yang terenkode.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('/decode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pdn: encodedPDN }),
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById("extracted-binary").textContent = data.binary_message;
+                document.getElementById("decoded-message").textContent = data.decoded_message || "(Tidak ditemukan pesan yang valid)";
+                
+                // Populate debug info
+                if (data.debug_info) {
+                    const tableBody = document.querySelector("#move-debug-table tbody");
+                    tableBody.innerHTML = ""; // Clear previous content
+                      data.debug_info.forEach(info => {
+                        const row = document.createElement("tr");
+                        
+                        const lineCell = document.createElement("td");
+                        lineCell.textContent = info.line;
+                        row.appendChild(lineCell);
+                        
+                        const moveCell = document.createElement("td");
+                        moveCell.textContent = info.move;
+                        row.appendChild(moveCell);
+                          const firstZeroCell = document.createElement("td");
+                        firstZeroCell.textContent = info.first_number_leading_zero ? "Ya" : "Tidak";
+                        row.appendChild(firstZeroCell);
+                        
+                        const secondZeroCell = document.createElement("td");
+                        secondZeroCell.textContent = info.second_number_leading_zero ? "Ya" : "Tidak";
+                        row.appendChild(secondZeroCell);
+                        
+                        const bitsCell = document.createElement("td");
+                        bitsCell.textContent = info.bits;
+                        row.appendChild(bitsCell);
+                        
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                document.getElementById("decode-result").style.display = "block";            } catch (error) {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan saat mendekode pesan.");
+            }
+        }
+          // Toggle debug info display
+        function toggleDebugInfo() {
+            const debugInfo = document.getElementById("debug-info");
+            debugInfo.style.display = debugInfo.style.display === "none" ? "block" : "none";
+        }
+          // Check maximum message length that can be encoded
+        async function checkMaxLength() {
+            const pdnText = document.getElementById("pdn-input").value;
+            
+            if (!pdnText) {
+                document.getElementById("max-length-info").style.display = "none";
+                document.getElementById("char-count").style.display = "none";
+                return;
+            }
+            
+            try {
+                const response = await fetch('/get_max_length', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pdn: pdnText }),
+                });
+                
+                const data = await response.json();
+                const maxLength = data.max_message_length;
+                
+                document.getElementById("max-char-count").textContent = maxLength;
+                document.getElementById("max-length-info").style.display = "block";
+                
+                // Update character counter
+                document.getElementById("max-chars").textContent = maxLength;
+                updateCharCount();
+                document.getElementById("char-count").style.display = "block";
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        // Update character count for message input
+        function updateCharCount() {
+            const message = document.getElementById("message-input").value;
+            const currentCount = message.length;
+            const maxCount = parseInt(document.getElementById("max-chars").textContent) || 0;
+            
+            document.getElementById("current-chars").textContent = currentCount;
+            
+            const charCount = document.getElementById("char-count");
+            if (currentCount > maxCount && maxCount > 0) {
+                charCount.style.color = "red";
+            } else {
+                charCount.style.color = "";
+            }
+            
+            if (document.getElementById("max-length-info").style.display !== "none") {
+                charCount.style.display = "block";
+            }
+        }        // Copy text to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand("copy");
+            alert("Berhasil disalin ke clipboard!");
+        }        // Upload PDN file for encoding
+        async function uploadPDN() {
+            const fileInput = document.getElementById('pdn-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Silakan pilih file terlebih dahulu.");
+                return;
+            }
+            
+            if (!file.name.toLowerCase().endsWith('.pdn')) {
+                alert("Silakan unggah file PDN.");
+                return;
+            }
+            
+            // Simpan nama file asli
+            originalPdnFilename = file.name;
+            
+            const formData = new FormData();
+            formData.append('pdn_file', file);
+            
+            try {
+                const response = await fetch('/upload_pdn', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                  document.getElementById('pdn-input').value = data.pdn_content;
+                  // Display max message length
+                if (data.max_message_length !== undefined) {
+                    const maxLength = data.max_message_length;
+                    document.getElementById("max-char-count").textContent = maxLength;
+                    document.getElementById("max-length-info").style.display = "block";
+                    
+                    // Update character counter
+                    document.getElementById("max-chars").textContent = maxLength;
+                    updateCharCount();
+                    document.getElementById("char-count").style.display = "block";                }
+                
+                alert("File PDN berhasil dimuat!");
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan saat mengunggah file.");
+            }
+        }
+          // Upload PDN file for decoding
+        async function uploadEncodedPDN() {
+            const fileInput = document.getElementById('encoded-pdn-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Silakan pilih file terlebih dahulu.");
+                return;
+            }
+            
+            if (!file.name.toLowerCase().endsWith('.pdn')) {
+                alert("Silakan unggah file PDN.");
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('pdn_file', file);
+            
+            try {
+                const response = await fetch('/upload_pdn', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }                
+                document.getElementById('encoded-pdn-input').value = data.pdn_content;
+                alert("File PDN berhasil dimuat!");
+            } catch (error) {
+                console.error('Error:', error);
+                alert("Terjadi kesalahan saat mengunggah file.");
+            }
+        }        // Download encoded PDN as a file
+        function downloadPDN() {
+            const encodedPDN = document.getElementById("encoded-pdn").value;
+            
+            if (!encodedPDN) {
+                alert("Tidak ada PDN terenkode untuk diunduh.");
+                return;
+            }
+            
+            // Create a blob with the PDN content
+            const blob = new Blob([encodedPDN], { type: 'text/plain' });
+            
+            // Create a temporary link to trigger download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            // Tentukan nama file untuk diunduh
+            let downloadFilename;
+            if (originalPdnFilename && originalPdnFilename.trim() !== "") {
+                // Gunakan nama file asli jika tersedia
+                downloadFilename = originalPdnFilename;
+            } else {
+                // Gunakan nama default dengan tanggal jika nama file asli tidak tersedia
+                const now = new Date();
+                const dateStr = now.toISOString().slice(0, 10);
+                downloadFilename = `encoded_pdn_${dateStr}.pdn`;
+            }
+            
+            a.href = url;
+            a.download = downloadFilename;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
